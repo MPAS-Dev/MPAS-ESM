@@ -6,3 +6,7 @@
 	path = src/MOM6_interface/MOM6
 	url = https://github.com/NCAR/MOM6.git
 	branch = dev/ncar
+[submodule "src/CDEPS"]
+	path = src/CDEPS
+	url = https://github.com/ESCOMP/CDEPS
+	branch = main
