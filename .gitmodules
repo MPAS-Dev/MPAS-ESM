@@ -10,3 +10,7 @@
 	path = src/CDEPS
 	url = https://github.com/ESCOMP/CDEPS
 	branch = main
+[submodule "src/CMEPS"]
+	path = src/CMEPS
+	url = https://github.com/geogate-io/CMEPS.git
+	branch = eature/esmx
