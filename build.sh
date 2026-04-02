@@ -10,10 +10,12 @@ OPTIONS
       number of build jobs; defaults to 4
   --component-list=COMPONENT_LIST
       list of component/s to couple with MPAS seperated with comma
-      (e.g. mom6 | docn )
+      (e.g. mom6 | docn | cmeps)
   -c, --compiler=COMPILER
       compiler to use; default depends on platform
       (e.g. intel | gnu)
+  -d, --debug
+      enable debug mode
   -p, --platform=PLATFORM
       name of machine you are building on
       (e.g. derecho)
@@ -42,6 +44,7 @@ Settings:
   BUILD_JOBS = ${BUILD_JOBS}
   COMPILER = ${COMPILER}
   COMPONENT_LIST = ${COMPONENT_LIST}
+  DEBUG = ${DEBUG}
   PLATFORM = ${PLATFORM}
   REMOVE = ${REMOVE}
   VERBOSE = ${VERBOSE}
@@ -60,6 +63,7 @@ APP_DIR=$(cd "$(dirname "$(readlink -f -n "${BASH_SOURCE[0]}" )" )" && pwd -P)
 BUILD_DIR="${BUILD_DIR:-${APP_DIR}/build}"
 BUILD_JOBS=4
 COMPILER="gnu"
+DEBUG=false
 INSTALL_DIR=${INSTALL_DIR:-${APP_DIR}/install}
 PLATFORM="derecho"
 REMOVE=false
@@ -74,6 +78,8 @@ while :; do
     --compiler|--compiler=|-c|-c=) usage_error "$1 requires argument." ;;
     --component-list=?*) COMPONENT_LIST=${1#*=} ;;
     --component-list=) usage_error "$1 argument ignored." ;;
+    --debug|-d) DEBUG=true ;;
+    --debug=?*|--debug=) usage_error "$1 argument ignored." ;;
     --platform=?*|-p=?*) PLATFORM=${1#*=} ;;
     --platform|--platform=|-p|-p=) usage_error "$1 requires argument." ;;
     --remove) REMOVE=true ;;
@@ -96,6 +102,7 @@ PLATFORM=$(echo ${PLATFORM} | tr '[A-Z]' '[a-z]')
 declare -A dict_comps
 dict_comps["mom6"]="false"
 dict_comps["docn"]="false"
+dict_comps["cmeps"]="false"
 OLD_IFS="$IFS"
 IFS=','
 for key in $COMPONENT_LIST; do
@@ -154,17 +161,30 @@ if [ -f "esmxBuild.yaml" ]; then
   rm -rf esmxBuild.yaml
 fi
 
+# Compiler specific flags
+if [ "${COMPILER}" == "gnu" ]; then
+  export FFLAGS="-DCPRGNU"
+else
+  export FFLAGS=""
+fi
+
 # Create esmxBuild.yaml
-export FFLAGS="-DCPRGNU"
 echo "application:" >> esmxBuild.yaml
 echo "  disable_comps: ESMX_Data" >> esmxBuild.yaml
 echo "  link_libraries: piof" >> esmxBuild.yaml
+if [ "${DEBUG}" = true ]; then
+echo "  cmake_build_args: -DCMAKE_Fortran_FLAGS=-g -DCMAKE_BUILD_TYPE=Debug" >> esmxBuild.yaml
+fi
 echo "components:" >> esmxBuild.yaml
 # MPAS
 echo "  mpas_atm_nuopc:" >> esmxBuild.yaml
 echo "    source_dir: src/MPAS-Model" >> esmxBuild.yaml
 echo "    build_type: cmake.external" >> esmxBuild.yaml
+if [ "${DEBUG}" = true ]; then
+echo "    build_args: \"-DMPAS_NUOPC=ON -DMPAS_DOUBLE_PRECISION=OFF -DMPAS_USE_PIO=ON -DDEBUG=ON\"" >> esmxBuild.yaml
+else
 echo "    build_args: \"-DMPAS_NUOPC=ON -DMPAS_DOUBLE_PRECISION=OFF -DMPAS_USE_PIO=ON\"" >> esmxBuild.yaml
+fi
 # DOCN
 if [[ "${dict_comps["docn"]}" == "true" ]]; then
   echo "  docn:" >> esmxBuild.yaml
@@ -188,6 +208,15 @@ if [[ "${dict_comps["mom6"]}" == "true" ]]; then
   echo "    link_paths: $FMS_ROOT" >> esmxBuild.yaml
   echo "    link_libraries: fms_r8 cdeps_share" >> esmxBuild.yaml
 fi
+# CMEPS
+if [[ "${dict_comps["cmeps"]}" == "true" ]]; then
+  echo "  cmeps:" >> esmxBuild.yaml
+  echo "    source_dir: src/CMEPS" >> esmxBuild.yaml
+  echo "    build_type: cmake.external" >> esmxBuild.yaml
+  echo "    build_args: \"-DPIO_C_LIBRARY=$PIO_C_LIBRARY -DPIO_C_INCLUDE_DIR=$PIO_C_INCLUDE_DIR -DPIO_Fortran_LIBRARY=$PIO_Fortran_LIBRARY -DPIO_Fortran_INCLUDE_DIR=$PIO_Fortran_INCLUDE_DIR -DCMAKE_Fortran_FLAGS=-I${PWD}/build/docn/share\"" >> esmxBuild.yaml
+  echo "    fort_module: med.mod" >> esmxBuild.yaml
+  echo "    libraries: cmeps cmeps_share cdeps_share" >> esmxBuild.yaml
+fi
 
 # Build application
-ESMX_Builder -v --build-jobs=${BUILD_JOBS} --cmake-args="-DCMAKE_Fortran_FLAGS=-I${PWD}/install/mod"
+ESMX_Builder -v --build-jobs=${BUILD_JOBS} --cmake-args="-DCMAKE_Fortran_FLAGS=-I${PWD}/install/include"
