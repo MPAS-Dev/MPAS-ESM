@@ -168,6 +168,17 @@ else
   export FFLAGS=""
 fi
 
+# Check ESMF version
+esmf_ver=`cat $ESMFMKFILE | grep "ESMF_VERSION_STRING=" | awk -F= '{print $2}'`
+IFS='.' read -r -a arr <<< "$esmf_ver"
+echo "ESMF Major  : ${arr[0]}"
+echo "ESMF Minor  : ${arr[1]}"
+echo "ESMF Patch  : ${arr[2]}"
+build_type="cmake"
+if [[ ${arr[0]} -ge 8 && ${arr[1]} -ge 9 ]]; then
+   build_type="cmake.external"
+fi
+
 # Create esmxBuild.yaml
 echo "application:" >> esmxBuild.yaml
 echo "  disable_comps: ESMX_Data" >> esmxBuild.yaml
@@ -179,7 +190,7 @@ echo "components:" >> esmxBuild.yaml
 # MPAS
 echo "  mpas_atm_nuopc:" >> esmxBuild.yaml
 echo "    source_dir: src/MPAS-Model" >> esmxBuild.yaml
-echo "    build_type: cmake.external" >> esmxBuild.yaml
+echo "    build_type: $build_type" >> esmxBuild.yaml
 if [ "${DEBUG}" = true ]; then
 echo "    build_args: \"-DMPAS_NUOPC=ON -DMPAS_DOUBLE_PRECISION=OFF -DMPAS_USE_PIO=ON -DDEBUG=ON\"" >> esmxBuild.yaml
 else
@@ -189,7 +200,7 @@ fi
 if [[ "${dict_comps["docn"]}" == "true" ]]; then
   echo "  docn:" >> esmxBuild.yaml
   echo "    source_dir: src/CDEPS" >> esmxBuild.yaml
-  echo "    build_type: cmake.external" >> esmxBuild.yaml
+  echo "    build_type: $build_type" >> esmxBuild.yaml
   if [[ "${COMPILER}" == "gnu" ]]; then
     echo "    build_args: \"-DDISABLE_FoX=ON -DPIO_C_LIBRARY=$PIO_C_LIBRARY -DPIO_C_INCLUDE_DIR=$PIO_C_INCLUDE_DIR -DPIO_Fortran_LIBRARY=$PIO_Fortran_LIBRARY -DPIO_Fortran_INCLUDE_DIR=$PIO_Fortran_INCLUDE_DIR -DCMAKE_Fortran_FLAGS='-ffree-line-length-none'\"" >> esmxBuild.yaml
   else
@@ -202,8 +213,9 @@ fi
 if [[ "${dict_comps["mom6"]}" == "true" ]]; then
   echo "  mom6:" >> esmxBuild.yaml
   echo "    source_dir: src/MOM6_interface" >> esmxBuild.yaml
-  echo "    build_type: cmake.external" >> esmxBuild.yaml
-  echo "    fort_module: mom_cap_mod" >> esmxBuild.yaml
+  echo "    build_type: $build_type" >> esmxBuild.yaml
+  echo "    build_args: \"-DCMAKE_Fortran_FLAGS=-I${FMS_ROOT}/include_r8\"" >> esmxBuild.yaml
+  echo "    fort_module: mom_cap_mod.mod" >> esmxBuild.yaml
   echo "    libraries: mom6" >> esmxBuild.yaml
   echo "    link_paths: $FMS_ROOT" >> esmxBuild.yaml
   echo "    link_libraries: fms_r8 cdeps_share" >> esmxBuild.yaml
@@ -212,7 +224,7 @@ fi
 if [[ "${dict_comps["cmeps"]}" == "true" ]]; then
   echo "  cmeps:" >> esmxBuild.yaml
   echo "    source_dir: src/CMEPS" >> esmxBuild.yaml
-  echo "    build_type: cmake.external" >> esmxBuild.yaml
+  echo "    build_type: $build_type" >> esmxBuild.yaml
   echo "    build_args: \"-DPIO_C_LIBRARY=$PIO_C_LIBRARY -DPIO_C_INCLUDE_DIR=$PIO_C_INCLUDE_DIR -DPIO_Fortran_LIBRARY=$PIO_Fortran_LIBRARY -DPIO_Fortran_INCLUDE_DIR=$PIO_Fortran_INCLUDE_DIR -DCMAKE_Fortran_FLAGS=-I${PWD}/build/docn/share\"" >> esmxBuild.yaml
   echo "    fort_module: med.mod" >> esmxBuild.yaml
   echo "    libraries: cmeps cmeps_share cdeps_share" >> esmxBuild.yaml
