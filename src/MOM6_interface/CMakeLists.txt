@@ -60,7 +60,7 @@ install(
   COMPONENT Library
 )
 
-install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/mod DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/mod/ DESTINATION include)
 
 install(
   EXPORT mom6-config
