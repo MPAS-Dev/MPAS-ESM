@@ -31,7 +31,7 @@ endif()
 
 option(CDEPS_INLINE "Enable CDEPS Inline capability" OFF)
 option(CESMCOUPLED "Enable CESM specific code" OFF)
-option(PIO_INIT "Initialize PIO inside of CMEPS" ON
+option(PIO_INIT "Initialize PIO inside of CMEPS" ON)
 
 message("PROJECT_SOURCE_DIR = ${PROJECT_SOURCE_DIR}")
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../CDEPS/cmake)
