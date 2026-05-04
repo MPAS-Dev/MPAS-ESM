@@ -16,6 +16,8 @@ OPTIONS
       (e.g. intel | gnu)
   -d, --debug
       enable debug mode
+  -i, --install_dir=INSTALL_DIR
+      installation directory
   -p, --platform=PLATFORM
       name of machine you are building on
       (e.g. derecho)
@@ -47,6 +49,7 @@ Settings:
   COMPILER = ${COMPILER}
   COMPONENT_LIST = ${COMPONENT_LIST}
   DEBUG = ${DEBUG}
+  INSTALL_DIR = ${INSTALL_DIR}
   PLATFORM = ${PLATFORM}
   REGIONAL = ${REGIONAL}
   REMOVE = ${REMOVE}
@@ -84,6 +87,8 @@ while :; do
     --component-list=) usage_error "$1 argument ignored." ;;
     --debug|-d) DEBUG=true ;;
     --debug=?*|--debug=) usage_error "$1 argument ignored." ;;
+    --install-dir=?*) INSTALL_DIR=${1#*=} ;;
+    --install-dir=) usage_error "$1 argument ignored." ;;
     --platform=?*|-p=?*) PLATFORM=${1#*=} ;;
     --platform|--platform=|-p|-p=) usage_error "$1 requires argument." ;;
     --regional) REGIONAL=true ;;
@@ -189,6 +194,9 @@ fi
 echo "application:" >> esmxBuild.yaml
 echo "  disable_comps: ESMX_Data" >> esmxBuild.yaml
 echo "  link_libraries: piof" >> esmxBuild.yaml
+if [ "${REGIONAL}" = true ] ; then
+echo "  exe_name: esmx_app_regional" >> esmxBuild.yaml
+fi
 if [ "${DEBUG}" = true ]; then
 echo "  cmake_build_args: -DCMAKE_Fortran_FLAGS=-g -DCMAKE_BUILD_TYPE=Debug" >> esmxBuild.yaml
 fi
@@ -236,7 +244,7 @@ if [[ "${dict_comps["cmeps"]}" == "true" ]]; then
   echo "    source_dir: src/CMEPS-interface" >> esmxBuild.yaml
   echo "    build_type: $build_type" >> esmxBuild.yaml
   if [ "${REGIONAL}" = true ] ; then
-    echo "    build_args: \"-DCESMCOUPLED=ON -DCDEPS_INLINE=ON -DPIO_C_LIBRARY=$PIO_C_LIBRARY -DPIO_C_INCLUDE_DIR=$PIO_C_INCLUDE_DIR -DPIO_Fortran_LIBRARY=$PIO_Fortran_LIBRARY -DPIO_Fortran_INCLUDE_DIR=$PIO_Fortran_INCLUDE_DIR -DCMAKE_Fortran_FLAGS=-I${PWD}/install/include\"" >> esmxBuild.yaml
+    echo "    build_args: \"-DCESMCOUPLED=ON -DCDEPS_INLINE=ON -DPIO_C_LIBRARY=$PIO_C_LIBRARY -DPIO_C_INCLUDE_DIR=$PIO_C_INCLUDE_DIR -DPIO_Fortran_LIBRARY=$PIO_Fortran_LIBRARY -DPIO_Fortran_INCLUDE_DIR=$PIO_Fortran_INCLUDE_DIR -DCMAKE_Fortran_FLAGS=-I${PWD}/${INSTALL_DIR}/include\"" >> esmxBuild.yaml
   else
     echo "    build_args: \"-DCESMCOUPLED=ON -DPIO_C_LIBRARY=$PIO_C_LIBRARY -DPIO_C_INCLUDE_DIR=$PIO_C_INCLUDE_DIR -DPIO_Fortran_LIBRARY=$PIO_Fortran_LIBRARY -DPIO_Fortran_INCLUDE_DIR=$PIO_Fortran_INCLUDE_DIR -DCMAKE_Fortran_FLAGS=-I${PWD}/build/docn/share\"" >> esmxBuild.yaml
   fi
@@ -245,4 +253,4 @@ if [[ "${dict_comps["cmeps"]}" == "true" ]]; then
 fi
 
 # Build application
-ESMX_Builder -v --build-jobs=${BUILD_JOBS} --cmake-args="-DCMAKE_Fortran_FLAGS=-I${PWD}/install/include"
+ESMX_Builder -v --prefix=$INSTALL_DIR --build-jobs=${BUILD_JOBS} --cmake-args="-DCMAKE_Fortran_FLAGS=-I${PWD}/${INSTALL_DIR}/include"
