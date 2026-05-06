@@ -8,6 +8,8 @@ Usage: $0 --platform=PLATFORM [OPTIONS] ... [TARGETS]
 OPTIONS
   --build-jobs=BUILD_JOBS
       number of build jobs; defaults to 4
+  -b, --build_dir=BUILD_DIR
+      build directory
   --component-list=COMPONENT_LIST
       list of component/s to couple with MPAS seperated with comma
       (e.g. mom6 | docn | cmeps)
@@ -46,6 +48,7 @@ cat << EOF_SETTINGS
 Settings:
 
   BUILD_JOBS = ${BUILD_JOBS}
+  BUILD_DIR = ${BUILD_DIR}
   COMPILER = ${COMPILER}
   COMPONENT_LIST = ${COMPONENT_LIST}
   DEBUG = ${DEBUG}
@@ -81,14 +84,16 @@ while :; do
   case $1 in
     --build-jobs=?*) BUILD_JOBS=$((${1#*=})) ;;
     --build-jobs|--build-jobs=) usage_error "$1 requires argument." ;;
+    --build-dir=?*|-b=?*) BUILD_DIR=${1#*=} ;;
+    --build-dir|--build-dir=|-b|-b=) usage_error "$1 argument ignored." ;;
     --compiler=?*|-c=?*) COMPILER=${1#*=} ;;
     --compiler|--compiler=|-c|-c=) usage_error "$1 requires argument." ;;
     --component-list=?*) COMPONENT_LIST=${1#*=} ;;
     --component-list=) usage_error "$1 argument ignored." ;;
     --debug|-d) DEBUG=true ;;
     --debug=?*|--debug=) usage_error "$1 argument ignored." ;;
-    --install-dir=?*) INSTALL_DIR=${1#*=} ;;
-    --install-dir=) usage_error "$1 argument ignored." ;;
+    --install-dir=?*|-i=?*) INSTALL_DIR=${1#*=} ;;
+    --install-dir|--install-dir=|-i|-i=) usage_error "$1 argument ignored." ;;
     --platform=?*|-p=?*) PLATFORM=${1#*=} ;;
     --platform|--platform=|-p|-p=) usage_error "$1 requires argument." ;;
     --regional) REGIONAL=true ;;
@@ -164,7 +169,7 @@ if [ "${REMOVE}" = true ]; then
   fi
 else
   # Remove cache to prevent hanging
-  rm -rf build/CMakeCache.txt build/CMakeFiles
+  find ${BUILD_DIR}/. -name "CMakeCache.txt" -type f -delete
 fi
 
 # Remove exiting esmxBuild.yaml
