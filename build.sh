@@ -194,6 +194,9 @@ build_type="cmake"
 if [[ ${arr[0]} -ge 8 && ${arr[1]} -ge 9 ]]; then
    build_type="cmake.external"
 fi
+if [[ ${arr[0]} -ge 9 ]]; then
+   build_type="cmake.external"
+fi
 
 # Create esmxBuild.yaml
 echo "application:" >> esmxBuild.yaml
@@ -215,6 +218,8 @@ echo "    build_args: \"-DMPAS_NUOPC=ON -DMPAS_DOUBLE_PRECISION=OFF -DMPAS_USE_P
 else
 echo "    build_args: \"-DMPAS_NUOPC=ON -DMPAS_DOUBLE_PRECISION=OFF -DMPAS_USE_PIO=ON\"" >> esmxBuild.yaml
 fi
+echo "    link_paths: ${ESMF_ROOT}/lib" >> esmxBuild.yaml
+echo "    link_libraries: esmf" >> esmxBuild.yaml
 # DOCN
 if [[ "${dict_comps["docn"]}" == "true" ]]; then
   echo "  docn:" >> esmxBuild.yaml
@@ -255,6 +260,8 @@ if [[ "${dict_comps["cmeps"]}" == "true" ]]; then
   fi
   echo "    fort_module: med.mod" >> esmxBuild.yaml
   echo "    libraries: cmeps dshr streams cdeps_share" >> esmxBuild.yaml
+  echo "    link_paths: ${ESMF_ROOT}/lib" >> esmxBuild.yaml
+  echo "    link_libraries: esmf" >> esmxBuild.yaml
 fi
 
 # Build application

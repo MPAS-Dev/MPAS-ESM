@@ -13,8 +13,11 @@ module load hdf5/1.14.3
 module load netcdf-c/4.9.2
 module load netcdf-fortran/4.6.1
 module load parallelio/2.6.2
-module load esmf/8.8.0
+#module load esmf/8.8.0
 module load fms/2024.02
+
+module use /glade/work/turuncu/MPAS-COUPLED/PROGS/esmf_v9.0.0b13/modulefiles
+module load esmf/9.0.0b13 
 
 # List loaded packages
 module li
@@ -40,3 +43,4 @@ export PIO_C_INCLUDE_DIR=${PIO_C_PATH}/include
 export PIO_Fortran_LIBRARY=${PIO_Fortran_PATH}/lib
 export PIO_Fortran_INCLUDE_DIR=${PIO_Fortran_PATH}/include
 export FMS_ROOT=$fms_ROOT
+export ESMF_ROOT=$esmf_ROOT
