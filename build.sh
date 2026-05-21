@@ -168,8 +168,10 @@ if [ "${REMOVE}" = true ]; then
     rm -rf ${INSTALL_DIR}
   fi
 else
-  # Remove cache to prevent hanging
-  find ${BUILD_DIR}/. -name "CMakeCache.txt" -type f -delete
+  if [ -d "${BUILD_DIR}" ]; then
+    # Remove cache to prevent hanging
+    find ${BUILD_DIR}/. -name "CMakeCache.txt" -type f -delete
+  fi
 fi
 
 # Remove exiting esmxBuild.yaml
