@@ -8,7 +8,7 @@ Usage: $0 --platform=PLATFORM [OPTIONS] ... [TARGETS]
 OPTIONS
   --build-jobs=BUILD_JOBS
       number of build jobs; defaults to 4
-  -b, --build_dir=BUILD_DIR
+  -b, --build-dir=BUILD_DIR
       build directory
   --component-list=COMPONENT_LIST
       list of component/s to couple with MPAS seperated with comma
@@ -18,7 +18,7 @@ OPTIONS
       (e.g. intel | gnu)
   -d, --debug
       enable debug mode
-  -i, --install_dir=INSTALL_DIR
+  -i, --install-dir=INSTALL_DIR
       installation directory
   -p, --platform=PLATFORM
       name of machine you are building on
