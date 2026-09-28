@@ -20,6 +20,8 @@ OPTIONS
       enable debug mode
   -i, --install-dir=INSTALL_DIR
       installation directory
+  --mpas-use-pio
+      MPAS compiled with PIO support
   -p, --platform=PLATFORM
       name of machine you are building on
       (e.g. derecho)
@@ -53,6 +55,7 @@ Settings:
   COMPONENT_LIST = ${COMPONENT_LIST}
   DEBUG = ${DEBUG}
   INSTALL_DIR = ${INSTALL_DIR}
+  MPAS_USE_PIO = ${MPAS_USE_PIO}
   PLATFORM = ${PLATFORM}
   REGIONAL = ${REGIONAL}
   REMOVE = ${REMOVE}
@@ -74,6 +77,7 @@ BUILD_JOBS=4
 COMPILER="gnu"
 DEBUG=false
 INSTALL_DIR=${INSTALL_DIR:-${APP_DIR}/install}
+MPAS_USE_PIO=OFF
 PLATFORM="derecho"
 REGIONAL=false
 REMOVE=false
@@ -94,6 +98,8 @@ while :; do
     --debug=?*|--debug=) usage_error "$1 argument ignored." ;;
     --install-dir=?*|-i=?*) INSTALL_DIR=${1#*=} ;;
     --install-dir|--install-dir=|-i|-i=) usage_error "$1 argument ignored." ;;
+    --mpas_use_pio) MPAS_USE_PIO=ON ;;
+    --mpas_use_pio=?*|--remove=) usage_error "$1 argument ignored." ;;
     --platform=?*|-p=?*) PLATFORM=${1#*=} ;;
     --platform|--platform=|-p|-p=) usage_error "$1 requires argument." ;;
     --regional) REGIONAL=true ;;
@@ -213,25 +219,26 @@ fi
 # Create esmxBuild.yaml
 echo "application:" >> esmxBuild.yaml
 echo "  disable_comps: ESMX_Data" >> esmxBuild.yaml
+if [ "${MPAS_USE_PIO}" = "OFF" ]; then
 echo "  link_libraries: piof" >> esmxBuild.yaml
+else
+echo "  link_libraries: piof" >> esmxBuild.yaml
+fi
 if [ "${REGIONAL}" = true ] ; then
 echo "  exe_name: esmx_app_regional" >> esmxBuild.yaml
-fi
-if [ "${DEBUG}" = true ]; then
-echo "  cmake_build_args: -DCMAKE_Fortran_FLAGS=-g -DCMAKE_BUILD_TYPE=Debug" >> esmxBuild.yaml
 fi
 echo "components:" >> esmxBuild.yaml
 # MPAS
 echo "  mpas_atm_nuopc:" >> esmxBuild.yaml
 echo "    source_dir: src/MPAS-Model" >> esmxBuild.yaml
 echo "    build_type: $build_type" >> esmxBuild.yaml
-if [ "${DEBUG}" = true ]; then
-echo "    build_args: \"-DMPAS_NUOPC=ON -DMPAS_DOUBLE_PRECISION=OFF -DMPAS_USE_PIO=ON -DDEBUG=ON\"" >> esmxBuild.yaml
+if [[ "${DEBUG,,}" == "true" ]]; then
+echo "    build_args: \"-DMPAS_NUOPC=ON -DMPAS_DOUBLE_PRECISION=OFF -DMPAS_USE_PIO=${MPAS_USE_PIO} -DCMAKE_BUILD_TYPE=Debug -DCMAKE_Fortran_FLAGS=-g\"" >> esmxBuild.yaml
 else
-echo "    build_args: \"-DMPAS_NUOPC=ON -DMPAS_DOUBLE_PRECISION=OFF -DMPAS_USE_PIO=ON\"" >> esmxBuild.yaml
+echo "    build_args: \"-DMPAS_NUOPC=ON -DMPAS_DOUBLE_PRECISION=OFF -DMPAS_USE_PIO=${MPAS_USE_PIO}\"" >> esmxBuild.yaml
 fi
 echo "    link_paths: ${ESMF_ROOT}/lib" >> esmxBuild.yaml
-echo "    link_libraries: esmf" >> esmxBuild.yaml
+echo "    link_libraries: esmf smiolf smiol" >> esmxBuild.yaml
 # DOCN
 if [[ "${dict_comps["docn"]}" == "true" ]]; then
   echo "  docn:" >> esmxBuild.yaml
@@ -253,7 +260,7 @@ if [[ "${dict_comps["mom6"]}" == "true" ]]; then
   if [ "${REGIONAL}" = true ] ; then
     echo "    build_args: \"-DCESMCOUPLED=ON -DREGIONAL_MOM6=ON -DCMAKE_Fortran_FLAGS=-I${FMS_ROOT}/include_r8\"" >> esmxBuild.yaml
   else
-    echo "    build_args: \"-DCMAKE_Fortran_FLAGS=-I${FMS_ROOT}/include_r8\"" >> esmxBuild.yaml
+    echo "    build_args: \"-DCESMCOUPLED=ON -DCMAKE_Fortran_FLAGS=-I${FMS_ROOT}/include_r8\"" >> esmxBuild.yaml
   fi
   echo "    fort_module: mom_cap_mod.mod" >> esmxBuild.yaml
   echo "    libraries: mom6" >> esmxBuild.yaml
@@ -277,4 +284,8 @@ if [[ "${dict_comps["cmeps"]}" == "true" ]]; then
 fi
 
 # Build application
-ESMX_Builder -v --prefix=$INSTALL_DIR --build-jobs=${BUILD_JOBS} --cmake-args="-DCMAKE_Fortran_FLAGS=-I${INSTALL_DIR}/include"
+if [[ "${DEBUG,,}" == "true" ]]; then
+  ESMX_Builder -v -g --prefix=$INSTALL_DIR --build-jobs=${BUILD_JOBS} --cmake-args="-DCMAKE_Fortran_FLAGS=-I${INSTALL_DIR}/include"
+else
+  ESMX_Builder -v --prefix=$INSTALL_DIR --build-jobs=${BUILD_JOBS} --cmake-args="-DCMAKE_Fortran_FLAGS=-I${INSTALL_DIR}/include"
+fi
