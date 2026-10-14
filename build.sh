@@ -98,8 +98,8 @@ while :; do
     --debug=?*|--debug=) usage_error "$1 argument ignored." ;;
     --install-dir=?*|-i=?*) INSTALL_DIR=${1#*=} ;;
     --install-dir|--install-dir=|-i|-i=) usage_error "$1 argument ignored." ;;
-    --mpas_use_pio) MPAS_USE_PIO=ON ;;
-    --mpas_use_pio=?*|--remove=) usage_error "$1 argument ignored." ;;
+    --mpas-use-pio) MPAS_USE_PIO=ON ;;
+    --mpas-use-pio=?*|--mpas-use-pio=) usage_error "$1 argument ignored." ;;
     --platform=?*|-p=?*) PLATFORM=${1#*=} ;;
     --platform|--platform=|-p|-p=) usage_error "$1 requires argument." ;;
     --regional) REGIONAL=true ;;
@@ -219,11 +219,7 @@ fi
 # Create esmxBuild.yaml
 echo "application:" >> esmxBuild.yaml
 echo "  disable_comps: ESMX_Data" >> esmxBuild.yaml
-if [ "${MPAS_USE_PIO}" = "OFF" ]; then
 echo "  link_libraries: piof" >> esmxBuild.yaml
-else
-echo "  link_libraries: piof" >> esmxBuild.yaml
-fi
 if [ "${REGIONAL}" = true ] ; then
 echo "  exe_name: esmx_app_regional" >> esmxBuild.yaml
 fi
@@ -238,7 +234,11 @@ else
 echo "    build_args: \"-DMPAS_NUOPC=ON -DMPAS_DOUBLE_PRECISION=OFF -DMPAS_USE_PIO=${MPAS_USE_PIO}\"" >> esmxBuild.yaml
 fi
 echo "    link_paths: ${ESMF_ROOT}/lib" >> esmxBuild.yaml
+if [ "${MPAS_USE_PIO}" = "OFF" ]; then
 echo "    link_libraries: esmf smiolf smiol" >> esmxBuild.yaml
+else
+echo "    link_libraries: esmf" >> esmxBuild.yaml
+fi
 # DOCN
 if [[ "${dict_comps["docn"]}" == "true" ]]; then
   echo "  docn:" >> esmxBuild.yaml
